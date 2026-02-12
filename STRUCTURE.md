@@ -20,11 +20,13 @@ src/
 ## Key Principles
 
 ### Schema-First Design
+
 - All domain models are defined in `lib/schema/` using Zod
 - Schemas are single source of truth for validation
 - Used on both client and server sides
 
 ### Server Components by Default
+
 - All components are Server Components unless explicitly marked with `"use client"`
 - Client Components only used for:
   - Form state management (with react-hook-form)
@@ -32,11 +34,13 @@ src/
   - User event handling
 
 ### Server Actions for Mutations
+
 - All CRUD operations use Server Actions (in `app/actions.ts`)
 - No REST API endpoints
 - Type-safe data flow from client to server
 
 ### Testing Strategy
+
 - **vitest**: Unit tests for schemas and utilities
 - **testing-library**: Component behavior tests
 - **Storybook**: Component documentation
@@ -45,9 +49,10 @@ src/
 ## Setup Complete ✓
 
 ### What's Configured
+
 - ✅ Next.js 16 with App Router
 - ✅ React 19 with proper setup
-- ✅ TypeScript with path aliases (@/*)
+- ✅ TypeScript with path aliases (@/\*)
 - ✅ Zod for schema validation
 - ✅ react-hook-form for form handling
 - ✅ Tailwind CSS & daisyUI for styling
