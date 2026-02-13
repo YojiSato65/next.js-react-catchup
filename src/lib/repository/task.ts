@@ -5,7 +5,12 @@
  */
 
 import { prisma } from "@/lib/prisma";
-import { TaskSchema, TaskStatus, TaskPriority, type Task } from "@/lib/schema/task";
+import {
+  TaskSchema,
+  TaskStatus,
+  TaskPriority,
+  type Task,
+} from "@/lib/schema/task";
 import { Prisma } from "@prisma/client";
 
 export class TaskRepository {
@@ -18,7 +23,7 @@ export class TaskRepository {
       orderBy?: Prisma.TaskOrderByWithRelationInput;
       take?: number;
       skip?: number;
-    }
+    },
   ): Promise<Task[]> {
     const tasks = await prisma.task.findMany({
       where,
@@ -27,7 +32,7 @@ export class TaskRepository {
       skip: options?.skip,
     });
 
-    return tasks.map(task => TaskSchema.parse(task));
+    return tasks.map((task) => TaskSchema.parse(task));
   }
 
   /**
@@ -95,10 +100,7 @@ export class TaskRepository {
   /**
    * Update an existing task
    */
-  static async update(
-    id: number,
-    data: Prisma.TaskUpdateInput
-  ): Promise<Task> {
+  static async update(id: number, data: Prisma.TaskUpdateInput): Promise<Task> {
     const task = await prisma.task.update({
       where: { id },
       data,
@@ -126,7 +128,10 @@ export class TaskRepository {
   /**
    * Update task priority
    */
-  static async updatePriority(id: number, priority: TaskPriority): Promise<Task> {
+  static async updatePriority(
+    id: number,
+    priority: TaskPriority,
+  ): Promise<Task> {
     return this.update(id, { priority });
   }
 

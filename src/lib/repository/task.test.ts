@@ -83,7 +83,10 @@ describe("TaskRepository", () => {
   describe("findByStatus", () => {
     it("should find tasks by status", async () => {
       await TaskRepository.create({ title: "Todo", status: "todo" });
-      await TaskRepository.create({ title: "In Progress", status: "in_progress" });
+      await TaskRepository.create({
+        title: "In Progress",
+        status: "in_progress",
+      });
       await TaskRepository.create({ title: "Done", status: "done" });
 
       const inProgress = await TaskRepository.findByStatus("in_progress");
@@ -117,7 +120,9 @@ describe("TaskRepository", () => {
   describe("update", () => {
     it("should update a task", async () => {
       const task = await TaskRepository.create({ title: "Original" });
-      const updated = await TaskRepository.update(task.id, { title: "Updated" });
+      const updated = await TaskRepository.update(task.id, {
+        title: "Updated",
+      });
 
       expect(updated.title).toBe("Updated");
     });
