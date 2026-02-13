@@ -16,11 +16,13 @@
     "e2e:debug": "playwright test --debug"
   },
   "dependencies": {
+    "@prisma/client": "^6.19.2",
     "daisyui": "^5.5.18",
     "next": "16.1.6",
     "react": "19.2.3",
     "react-dom": "19.2.3",
     "react-hook-form": "^7.50.0",
+    "sqlite3": "^5.1.7",
     "zod": "^3.22.4"
   },
   "devDependencies": {
@@ -36,6 +38,7 @@
     "eslint": "^9",
     "eslint-config-next": "16.1.6",
     "jsdom": "^23.2.0",
+    "prisma": "^6.19.2",
     "tailwindcss": "^4.1.18",
     "typescript": "^5",
     "vitest": "^1.1.0"
