@@ -4,9 +4,9 @@ import { Button } from "@/components/ui";
 import Link from "next/link";
 
 interface TaskDetailPageProps {
-  params: {
+  params: Promise<{
     id: string;
-  };
+  }>;
 }
 
 /**
@@ -14,10 +14,10 @@ interface TaskDetailPageProps {
  * Displays full details of a single task
  * Dynamic route: /tasks/[id]
  */
-export default async function TaskDetailPage({
-  params,
-}: TaskDetailPageProps) {
-  const taskId = parseInt(params.id, 10);
+export default async function TaskDetailPage({ params }: TaskDetailPageProps) {
+  // Await params since it's a Promise in Next.js 16
+  const { id } = await params;
+  const taskId = parseInt(id, 10);
 
   if (isNaN(taskId)) {
     notFound();
@@ -86,9 +86,7 @@ export default async function TaskDetailPage({
               <h3 className="text-sm font-medium text-gray-500 uppercase mb-1">
                 Assigned To
               </h3>
-              <p className="text-gray-900">
-                {task.assignee || "Not assigned"}
-              </p>
+              <p className="text-gray-900">{task.assignee || "Not assigned"}</p>
             </div>
 
             {/* Due Date */}
@@ -167,10 +165,10 @@ export async function generateStaticParams() {
 /**
  * Metadata for SEO
  */
-export async function generateMetadata({
-  params,
-}: TaskDetailPageProps) {
-  const taskId = parseInt(params.id, 10);
+export async function generateMetadata({ params }: TaskDetailPageProps) {
+  // Await params since it's a Promise in Next.js 16
+  const { id } = await params;
+  const taskId = parseInt(id, 10);
   const task = await TaskRepository.findById(taskId);
 
   if (!task) {

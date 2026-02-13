@@ -1,4 +1,5 @@
 import { Suspense } from "react";
+import Link from "next/link";
 import { TaskRepository } from "@/lib/repository/task";
 import { Button } from "@/components/ui";
 import { TaskStatus, TaskPriority } from "@/lib/schema/task";
@@ -10,29 +11,32 @@ import { TaskStatus, TaskPriority } from "@/lib/schema/task";
  */
 
 interface TaskListPageProps {
-  searchParams: {
+  searchParams: Promise<{
     status?: TaskStatus | string;
     priority?: TaskPriority | string;
     sortBy?: "createdAt" | "updatedAt" | "dueDate" | "priority";
     sortOrder?: "asc" | "desc";
-  };
+  }>;
 }
 
 /**
  * Task list component - fetches and renders tasks
  */
 async function TaskListContent({ searchParams }: TaskListPageProps) {
+  // Await searchParams since it's a Promise in Next.js 16
+  const params = await searchParams;
+
   // Validate and convert status if provided
-  const status = searchParams.status
-    ? TaskStatus.safeParse(searchParams.status).success
-      ? (searchParams.status as TaskStatus)
+  const status = params.status
+    ? TaskStatus.safeParse(params.status).success
+      ? (params.status as TaskStatus)
       : undefined
     : undefined;
 
   // Validate and convert priority if provided
-  const priority = searchParams.priority
-    ? TaskPriority.safeParse(searchParams.priority).success
-      ? (searchParams.priority as TaskPriority)
+  const priority = params.priority
+    ? TaskPriority.safeParse(params.priority).success
+      ? (params.priority as TaskPriority)
       : undefined
     : undefined;
 
@@ -43,7 +47,7 @@ async function TaskListContent({ searchParams }: TaskListPageProps) {
     },
     {
       orderBy: {
-        [searchParams.sortBy || "createdAt"]: searchParams.sortOrder || "desc",
+        [params.sortBy || "createdAt"]: params.sortOrder || "desc",
       },
     },
   );
@@ -150,7 +154,9 @@ export default async function TasksPage({ searchParams }: TaskListPageProps) {
         <h1 className="text-3xl font-bold text-gray-900 dark:text-white">
           Tasks
         </h1>
-        <Button variant="primary">New Task</Button>
+        <Link href="/tasks/new">
+          <Button variant="primary">New Task</Button>
+        </Link>
       </div>
 
       {/* Filters */}
