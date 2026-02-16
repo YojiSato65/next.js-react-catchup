@@ -1,8 +1,14 @@
 import { Suspense } from "react";
 import Link from "next/link";
-import { TaskRepository } from "@/lib/repository/task";
 import { Button } from "@/components/ui";
 import { TaskStatus, TaskPriority } from "@/lib/schema/task";
+import {
+  getMemoizedTaskList,
+  type MemoizedTaskQueryInput,
+  type MemoizedTaskQueryResult,
+  type TaskListSortField,
+  type TaskListSortOrder,
+} from "@/lib/fetchers/memoizedTasks";
 
 /**
  * Task List Page
@@ -40,90 +46,108 @@ async function TaskListContent({ searchParams }: TaskListPageProps) {
       : undefined
     : undefined;
 
-  const tasks = await TaskRepository.findMany(
-    {
-      ...(status && { status }),
-      ...(priority && { priority }),
-    },
-    {
-      orderBy: {
-        [params.sortBy || "createdAt"]: params.sortOrder || "desc",
-      },
-    },
-  );
+  const sortField = (params.sortBy || "createdAt") as TaskListSortField;
+  const sortOrder = (params.sortOrder || "desc") as TaskListSortOrder;
 
-  if (tasks.length === 0) {
-    return (
+  const where = {
+    ...(status && { status }),
+    ...(priority && { priority }),
+  };
+
+  const memoizedInput: MemoizedTaskQueryInput = {
+    ...(Object.keys(where).length > 0 ? { where } : {}),
+    sort: {
+      field: sortField,
+      order: sortOrder,
+    },
+  };
+
+  const memoizedResult = await getMemoizedTaskList(memoizedInput);
+  const memoizedResultAgain = await getMemoizedTaskList(memoizedInput);
+
+  const memoizationVerified = Object.is(memoizedResult, memoizedResultAgain);
+  const tasks = memoizedResult.tasks;
+
+  const listContent =
+    tasks.length === 0 ? (
       <div className="text-center py-12">
         <p className="text-gray-500 mb-4">No tasks found</p>
         <Button variant="primary">Create First Task</Button>
       </div>
-    );
-  }
-
-  return (
-    <div className="space-y-4">
-      {tasks.map((task) => (
-        <div
-          key={task.id}
-          className="bg-white dark:bg-slate-800 rounded-lg shadow p-4 border border-gray-200 dark:border-slate-700"
-        >
-          <div className="flex items-start justify-between gap-4">
-            <div className="flex-1">
-              <h3 className="font-semibold text-lg text-gray-900 dark:text-white">
-                {task.title}
-              </h3>
-              {task.description && (
-                <p className="text-gray-600 dark:text-gray-400 mt-1">
-                  {task.description}
-                </p>
-              )}
-              <div className="flex gap-2 mt-3 flex-wrap">
-                <span
-                  className={`text-xs font-medium px-2 py-1 rounded ${
-                    task.status === "done"
-                      ? "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200"
-                      : task.status === "in_progress"
-                        ? "bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200"
-                        : "bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-200"
-                  }`}
-                >
-                  {task.status}
-                </span>
-                <span
-                  className={`text-xs font-medium px-2 py-1 rounded ${
-                    task.priority === "high"
-                      ? "bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200"
-                      : task.priority === "medium"
-                        ? "bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200"
-                        : "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200"
-                  }`}
-                >
-                  {task.priority}
-                </span>
+    ) : (
+      <div className="space-y-4">
+        {tasks.map((task) => (
+          <div
+            key={task.id}
+            className="bg-white dark:bg-slate-800 rounded-lg shadow p-4 border border-gray-200 dark:border-slate-700"
+          >
+            <div className="flex items-start justify-between gap-4">
+              <div className="flex-1">
+                <h3 className="font-semibold text-lg text-gray-900 dark:text-white">
+                  {task.title}
+                </h3>
+                {task.description && (
+                  <p className="text-gray-600 dark:text-gray-400 mt-1">
+                    {task.description}
+                  </p>
+                )}
+                <div className="flex gap-2 mt-3 flex-wrap">
+                  <span
+                    className={`text-xs font-medium px-2 py-1 rounded ${
+                      task.status === "done"
+                        ? "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200"
+                        : task.status === "in_progress"
+                          ? "bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200"
+                          : "bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-200"
+                    }`}
+                  >
+                    {task.status}
+                  </span>
+                  <span
+                    className={`text-xs font-medium px-2 py-1 rounded ${
+                      task.priority === "high"
+                        ? "bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200"
+                        : task.priority === "medium"
+                          ? "bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200"
+                          : "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200"
+                    }`}
+                  >
+                    {task.priority}
+                  </span>
+                </div>
+              </div>
+              <div className="flex gap-2">
+                <Button variant="outline" size="sm">
+                  Edit
+                </Button>
+                <Button variant="outline" size="sm">
+                  Delete
+                </Button>
               </div>
             </div>
-            <div className="flex gap-2">
-              <Button variant="outline" size="sm">
-                Edit
-              </Button>
-              <Button variant="outline" size="sm">
-                Delete
-              </Button>
-            </div>
+            {task.assignee && (
+              <p className="text-sm text-gray-500 dark:text-gray-400 mt-3">
+                Assigned to: {task.assignee}
+              </p>
+            )}
+            {task.dueDate && (
+              <p className="text-sm text-gray-500 dark:text-gray-400">
+                Due: {new Date(task.dueDate).toLocaleDateString()}
+              </p>
+            )}
           </div>
-          {task.assignee && (
-            <p className="text-sm text-gray-500 dark:text-gray-400 mt-3">
-              Assigned to: {task.assignee}
-            </p>
-          )}
-          {task.dueDate && (
-            <p className="text-sm text-gray-500 dark:text-gray-400">
-              Due: {new Date(task.dueDate).toLocaleDateString()}
-            </p>
-          )}
-        </div>
-      ))}
+        ))}
+      </div>
+    );
+
+  return (
+    <div className="space-y-6">
+      <RequestMemoizationBanner
+        diagnostics={memoizedResult.diagnostics}
+        memoizationVerified={memoizationVerified}
+        taskCount={tasks.length}
+      />
+      {listContent}
     </div>
   );
 }
@@ -191,6 +215,71 @@ export default async function TasksPage({ searchParams }: TaskListPageProps) {
       <Suspense fallback={<TaskListSkeleton />}>
         <TaskListContent searchParams={searchParams} />
       </Suspense>
+    </div>
+  );
+}
+
+interface RequestMemoizationBannerProps {
+  diagnostics: MemoizedTaskQueryResult["diagnostics"];
+  memoizationVerified: boolean;
+  taskCount: number;
+}
+
+function RequestMemoizationBanner({
+  diagnostics,
+  memoizationVerified,
+  taskCount,
+}: RequestMemoizationBannerProps) {
+  return (
+    <div className="rounded-lg border border-indigo-200 bg-indigo-50 dark:bg-slate-900/40 dark:border-indigo-900 px-4 py-5">
+      <div className="flex flex-col gap-2">
+        <div className="flex items-center justify-between flex-wrap gap-2">
+          <div>
+            <p className="text-sm font-semibold text-indigo-900 dark:text-indigo-200">
+              Request Memoization
+            </p>
+            <p className="text-sm text-indigo-800/80 dark:text-indigo-100/70">
+              Issue #15 · Next.js automatically reuses identical fetch results
+              per request.
+            </p>
+          </div>
+          <span
+            className={`text-xs font-semibold px-3 py-1 rounded-full ${memoizationVerified ? "bg-green-100 text-green-800" : "bg-red-100 text-red-800"}`}
+          >
+            {memoizationVerified ? "Verified" : "Not memoized"}
+          </span>
+        </div>
+        <dl className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm text-indigo-900 dark:text-indigo-100">
+          <div>
+            <dt className="text-indigo-700/70 dark:text-indigo-200 text-xs uppercase tracking-wide">
+              Execution ID
+            </dt>
+            <dd className="font-mono text-sm break-all">
+              {diagnostics.executionId}
+            </dd>
+          </div>
+          <div>
+            <dt className="text-indigo-700/70 dark:text-indigo-200 text-xs uppercase tracking-wide">
+              Executed at
+            </dt>
+            <dd>{new Date(diagnostics.executedAt).toLocaleTimeString()}</dd>
+          </div>
+          <div>
+            <dt className="text-indigo-700/70 dark:text-indigo-200 text-xs uppercase tracking-wide">
+              Tasks fetched
+            </dt>
+            <dd>
+              {taskCount} · key {diagnostics.cacheKey.slice(0, 24)}
+              {diagnostics.cacheKey.length > 24 ? "…" : ""}
+            </dd>
+          </div>
+        </dl>
+        <p className="text-xs text-indigo-800/80 dark:text-indigo-200/70">
+          We call <code className="font-mono">getMemoizedTaskList()</code> twice
+          during the same render. Because the arguments are identical, the
+          cached result is reused and the repository executes only once.
+        </p>
+      </div>
     </div>
   );
 }
