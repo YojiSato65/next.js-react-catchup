@@ -15,13 +15,15 @@ function parseFilters(searchParams: URLSearchParams): TaskFilters {
   const statusParam = searchParams.get("status");
   const priorityParam = searchParams.get("priority");
 
-  const status = statusParam && TaskStatus.safeParse(statusParam).success
-    ? (statusParam as TaskStatus)
-    : undefined;
+  const status =
+    statusParam && TaskStatus.safeParse(statusParam).success
+      ? (statusParam as TaskStatus)
+      : undefined;
 
-  const priority = priorityParam && TaskPriority.safeParse(priorityParam).success
-    ? (priorityParam as TaskPriority)
-    : undefined;
+  const priority =
+    priorityParam && TaskPriority.safeParse(priorityParam).success
+      ? (priorityParam as TaskPriority)
+      : undefined;
 
   return {
     ...(status && { status }),

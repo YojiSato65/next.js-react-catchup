@@ -4,6 +4,7 @@ import { Button } from "@/components/ui";
 import { TaskStatus, TaskPriority } from "@/lib/schema/task";
 import {
   getMemoizedTaskList,
+  getNoStoreTaskList,
   type MemoizedTaskQueryInput,
   type MemoizedTaskQueryResult,
   type TaskListSortField,
@@ -64,6 +65,7 @@ async function TaskListContent({ searchParams }: TaskListPageProps) {
 
   const memoizedResult = await getMemoizedTaskList(memoizedInput);
   const memoizedResultAgain = await getMemoizedTaskList(memoizedInput);
+  const noStoreResult = await getNoStoreTaskList(memoizedInput);
 
   const memoizationVerified = Object.is(memoizedResult, memoizedResultAgain);
   const tasks = memoizedResult.tasks;
@@ -146,6 +148,10 @@ async function TaskListContent({ searchParams }: TaskListPageProps) {
         diagnostics={memoizedResult.diagnostics}
         memoizationVerified={memoizationVerified}
         taskCount={tasks.length}
+      />
+      <CacheStrategyComparison
+        revalidateDiagnostics={memoizedResult.diagnostics}
+        noStoreDiagnostics={noStoreResult.diagnostics}
       />
       {listContent}
     </div>
@@ -292,6 +298,107 @@ function RequestMemoizationBanner({
           timestamp.
         </p>
       </div>
+    </div>
+  );
+}
+
+interface CacheStrategyComparisonProps {
+  revalidateDiagnostics: MemoizedTaskQueryResult["diagnostics"];
+  noStoreDiagnostics: MemoizedTaskQueryResult["diagnostics"];
+}
+
+function CacheStrategyComparison({
+  revalidateDiagnostics,
+  noStoreDiagnostics,
+}: CacheStrategyComparisonProps) {
+  return (
+    <div className="rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900/40 px-4 py-5">
+      <div className="mb-4">
+        <p className="text-sm font-semibold text-slate-900 dark:text-slate-100">
+          Cache Strategy Comparison
+        </p>
+        <p className="text-sm text-slate-600 dark:text-slate-300">
+          Issue #17 · Observe how{" "}
+          <code className="font-mono">next.revalidate</code> serves cached
+          responses while <code className="font-mono">cache: &quot;no-store&quot;</code>{" "}
+          forces a fresh fetch every render.
+        </p>
+      </div>
+      <div className="grid gap-4 md:grid-cols-2">
+        <CacheStrategyCard
+          title="Data Cache (revalidate)"
+          badgeLabel={`TTL ${revalidateDiagnostics.revalidateInSeconds}s`}
+          description="Next.js stores this response until the TTL expires, so repeated refreshes within the window reuse the same payload."
+          diagnostics={revalidateDiagnostics}
+        />
+        <CacheStrategyCard
+          title="Dynamic fetch (no-store)"
+          badgeLabel="Always fresh"
+          description="By opting into cache: &quot;no-store&quot; we bypass the data cache entirely—every render triggers a brand new fetch."
+          diagnostics={noStoreDiagnostics}
+          noStore
+        />
+      </div>
+    </div>
+  );
+}
+
+interface CacheStrategyCardProps {
+  title: string;
+  description: string;
+  badgeLabel: string;
+  diagnostics: MemoizedTaskQueryResult["diagnostics"];
+  noStore?: boolean;
+}
+
+function CacheStrategyCard({
+  title,
+  description,
+  badgeLabel,
+  diagnostics,
+  noStore = false,
+}: CacheStrategyCardProps) {
+  return (
+    <div className="rounded-lg border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/60 p-4">
+      <div className="flex items-start justify-between gap-3 mb-3">
+        <div>
+          <p className="text-sm font-semibold text-slate-900 dark:text-slate-100">
+            {title}
+          </p>
+          <p className="text-xs text-slate-600 dark:text-slate-300">
+            {description}
+          </p>
+        </div>
+        <span className="text-xs font-semibold px-3 py-1 rounded-full bg-slate-200/80 dark:bg-slate-800 text-slate-800 dark:text-slate-100">
+          {badgeLabel}
+        </span>
+      </div>
+      <dl className="space-y-2 text-sm text-slate-900 dark:text-slate-100">
+        <div>
+          <dt className="text-xs uppercase tracking-wide text-slate-500 dark:text-slate-400">
+            Executed at
+          </dt>
+          <dd>{new Date(diagnostics.executedAt).toLocaleTimeString()}</dd>
+        </div>
+        <div>
+          <dt className="text-xs uppercase tracking-wide text-slate-500 dark:text-slate-400">
+            Cache key
+          </dt>
+          <dd className="font-mono text-xs break-all">
+            {diagnostics.cacheKey}
+          </dd>
+        </div>
+        <div>
+          <dt className="text-xs uppercase tracking-wide text-slate-500 dark:text-slate-400">
+            Cache lifetime
+          </dt>
+          <dd>
+            {noStore || diagnostics.revalidateInSeconds === 0
+              ? "Disabled (cache: &quot;no-store&quot;)"
+              : `${diagnostics.revalidateInSeconds}s via next.revalidate`}
+          </dd>
+        </div>
+      </dl>
     </div>
   );
 }

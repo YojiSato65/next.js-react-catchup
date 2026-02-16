@@ -51,6 +51,13 @@ This project explicitly experiments with and documents:
 
 Each layer is intentionally observed and documented.
 
+### Revalidate vs `cache: "no-store"`
+
+- Visit `/tasks` to see the “Cache Strategy Comparison” panel added for Issue #17.
+- The left card shows the cached response served by `next.revalidate` (currently 15 s).
+- The right card issues the same query with `cache: "no-store"`, forcing a new fetch on every render.
+- Refresh within the TTL to see the revalidate timestamp stay stable while the no-store timestamp updates immediately.
+
 ---
 
 ## 2️⃣ Server Actions & Revalidation

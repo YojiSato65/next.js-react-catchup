@@ -59,18 +59,29 @@ function buildQueryString(params: MemoizedTaskQueryInput): string {
   return searchParams.toString();
 }
 
-const memoizedTaskQuery = cache(async (serializedInput: string) => {
-  const params = JSON.parse(serializedInput) as MemoizedTaskQueryInput;
-
+function buildTaskCacheRequest(params: MemoizedTaskQueryInput) {
   const query = buildQueryString(params);
   const baseUrl = getAppBaseUrl();
-  const url = query ? `${baseUrl}${TASK_CACHE_PATH}?${query}` : `${baseUrl}${TASK_CACHE_PATH}`;
+  const url = query
+    ? `${baseUrl}${TASK_CACHE_PATH}?${query}`
+    : `${baseUrl}${TASK_CACHE_PATH}`;
 
-  const response = await fetch(url, {
-    next: {
-      revalidate: DATA_CACHE_REVALIDATE_SECONDS,
-    },
-  });
+  return { url, cacheKey: query || "all" };
+}
+
+type TaskFetchOptions = RequestInit & {
+  next?: {
+    revalidate?: number;
+    tags?: string[];
+  };
+};
+
+async function fetchTaskCachePayload(
+  params: MemoizedTaskQueryInput,
+  init?: TaskFetchOptions,
+) {
+  const { url, cacheKey } = buildTaskCacheRequest(params);
+  const response = await fetch(url, init);
 
   if (!response.ok) {
     throw new Error(`Failed to load cached tasks (status ${response.status})`);
@@ -78,15 +89,34 @@ const memoizedTaskQuery = cache(async (serializedInput: string) => {
 
   const payload = (await response.json()) as TaskCacheResponse;
 
+  return { payload, cacheKey };
+}
+
+function buildDiagnostics(
+  payload: TaskCacheResponse,
+  cacheKey: string,
+  revalidateInSeconds: number,
+) {
+  return {
+    executionId: randomUUID(),
+    executedAt: payload.generatedAt,
+    cacheKey,
+    revalidateInSeconds,
+  } satisfies MemoizedTaskQueryResult["diagnostics"];
+}
+
+const memoizedTaskQuery = cache(async (serializedInput: string) => {
+  const params = JSON.parse(serializedInput) as MemoizedTaskQueryInput;
+  const { payload, cacheKey } = await fetchTaskCachePayload(params, {
+    next: {
+      revalidate: DATA_CACHE_REVALIDATE_SECONDS,
+    },
+  });
+  const ttl = payload.cacheWindowSeconds ?? DATA_CACHE_REVALIDATE_SECONDS;
+
   return {
     tasks: payload.tasks,
-    diagnostics: {
-      executionId: randomUUID(),
-      executedAt: payload.generatedAt,
-      cacheKey: query || "all",
-      revalidateInSeconds:
-        payload.cacheWindowSeconds ?? DATA_CACHE_REVALIDATE_SECONDS,
-    },
+    diagnostics: buildDiagnostics(payload, cacheKey, ttl),
   } satisfies MemoizedTaskQueryResult;
 });
 
@@ -95,4 +125,17 @@ export async function getMemoizedTaskList(
 ): Promise<MemoizedTaskQueryResult> {
   const serialized = JSON.stringify(input);
   return memoizedTaskQuery(serialized);
+}
+
+export async function getNoStoreTaskList(
+  input: MemoizedTaskQueryInput,
+): Promise<MemoizedTaskQueryResult> {
+  const { payload, cacheKey } = await fetchTaskCachePayload(input, {
+    cache: "no-store",
+  });
+
+  return {
+    tasks: payload.tasks,
+    diagnostics: buildDiagnostics(payload, cacheKey, 0),
+  } satisfies MemoizedTaskQueryResult;
 }
