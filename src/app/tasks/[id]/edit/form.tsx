@@ -2,20 +2,20 @@
 
 import { useActionState } from "react";
 import { useRouter } from "next/navigation";
-import { createTask, type TaskMutationFormState } from "../actions";
+import type { Task } from "@/lib/schema/task";
 import { Button } from "@/components/ui";
+import { updateTask, type TaskMutationFormState } from "../../actions";
 
-/**
- * Task Creation Form Component
- * Client component using useActionState to handle Server Action submission
- */
+interface TaskEditFormProps {
+  task: Task;
+}
 
-export function TaskCreateForm() {
+export function TaskEditForm({ task }: TaskEditFormProps) {
   const router = useRouter();
   const [state, formAction, isPending] = useActionState<
     TaskMutationFormState | null,
     FormData
-  >(createTask, null);
+  >(updateTask, null);
 
   const errors =
     state && !state.success
@@ -25,14 +25,14 @@ export function TaskCreateForm() {
 
   return (
     <form action={formAction} className="space-y-6">
-      {/* General error message */}
+      <input type="hidden" name="taskId" value={task.id} />
+
       {hasErrors && errors?.submit && (
         <div className="alert alert-error">
           <span>{errors.submit[0]}</span>
         </div>
       )}
 
-      {/* Title field */}
       <div className="form-control w-full">
         <label className="label">
           <span className="label-text font-semibold">Task Title *</span>
@@ -40,7 +40,7 @@ export function TaskCreateForm() {
         <input
           type="text"
           name="title"
-          placeholder="Enter task title"
+          defaultValue={task.title}
           className={`input input-bordered w-full ${
             hasErrors && errors?.title ? "input-error" : ""
           }`}
@@ -54,14 +54,13 @@ export function TaskCreateForm() {
         )}
       </div>
 
-      {/* Description field */}
       <div className="form-control w-full">
         <label className="label">
           <span className="label-text font-semibold">Description</span>
         </label>
         <textarea
           name="description"
-          placeholder="Enter task description (optional)"
+          defaultValue={task.description ?? ""}
           className={`textarea textarea-bordered w-full ${
             hasErrors && errors?.description ? "textarea-error" : ""
           }`}
@@ -77,14 +76,13 @@ export function TaskCreateForm() {
         )}
       </div>
 
-      {/* Status field */}
       <div className="form-control w-full">
         <label className="label">
           <span className="label-text font-semibold">Status</span>
         </label>
         <select
           name="status"
-          defaultValue="todo"
+          defaultValue={task.status}
           className={`select select-bordered w-full ${
             hasErrors && errors?.status ? "select-error" : ""
           }`}
@@ -103,14 +101,13 @@ export function TaskCreateForm() {
         )}
       </div>
 
-      {/* Priority field */}
       <div className="form-control w-full">
         <label className="label">
           <span className="label-text font-semibold">Priority</span>
         </label>
         <select
           name="priority"
-          defaultValue="medium"
+          defaultValue={task.priority}
           className={`select select-bordered w-full ${
             hasErrors && errors?.priority ? "select-error" : ""
           }`}
@@ -129,7 +126,6 @@ export function TaskCreateForm() {
         )}
       </div>
 
-      {/* Assignee field */}
       <div className="form-control w-full">
         <label className="label">
           <span className="label-text font-semibold">Assignee</span>
@@ -137,6 +133,7 @@ export function TaskCreateForm() {
         <input
           type="email"
           name="assignee"
+          defaultValue={task.assignee ?? ""}
           placeholder="Enter assignee email (optional)"
           className={`input input-bordered w-full ${
             hasErrors && errors?.assignee ? "input-error" : ""
@@ -152,7 +149,6 @@ export function TaskCreateForm() {
         )}
       </div>
 
-      {/* Due Date field */}
       <div className="form-control w-full">
         <label className="label">
           <span className="label-text font-semibold">Due Date</span>
@@ -160,6 +156,7 @@ export function TaskCreateForm() {
         <input
           type="date"
           name="dueDate"
+          defaultValue={formatDateForInput(task.dueDate)}
           className={`input input-bordered w-full ${
             hasErrors && errors?.dueDate ? "input-error" : ""
           }`}
@@ -174,14 +171,9 @@ export function TaskCreateForm() {
         )}
       </div>
 
-      {/* Action buttons */}
       <div className="flex gap-3 pt-4">
-        <Button
-          type="submit"
-          disabled={isPending}
-          className="btn-primary flex-1"
-        >
-          {isPending ? "Creating..." : "Create Task"}
+        <Button type="submit" disabled={isPending} className="btn-primary flex-1">
+          {isPending ? "Saving..." : "Save Changes"}
         </Button>
         <button
           type="button"
@@ -194,4 +186,14 @@ export function TaskCreateForm() {
       </div>
     </form>
   );
+}
+
+function formatDateForInput(value?: Date | string | null) {
+  if (!value) return "";
+  const date = typeof value === "string" ? new Date(value) : value;
+  if (Number.isNaN(date.getTime())) return "";
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const day = String(date.getDate()).padStart(2, "0");
+  return `${year}-${month}-${day}`;
 }

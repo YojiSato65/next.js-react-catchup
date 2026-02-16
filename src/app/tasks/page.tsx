@@ -119,9 +119,11 @@ async function TaskListContent({ searchParams }: TaskListPageProps) {
                 </div>
               </div>
               <div className="flex gap-2">
-                <Button variant="outline" size="sm">
-                  Edit
-                </Button>
+                <Link href={`/tasks/${task.id}/edit`}>
+                  <Button variant="outline" size="sm">
+                    Edit
+                  </Button>
+                </Link>
                 <Button variant="outline" size="sm">
                   Delete
                 </Button>
@@ -320,8 +322,9 @@ function CacheStrategyComparison({
         <p className="text-sm text-slate-600 dark:text-slate-300">
           Issue #17 · Observe how{" "}
           <code className="font-mono">next.revalidate</code> serves cached
-          responses while <code className="font-mono">cache: &quot;no-store&quot;</code>{" "}
-          forces a fresh fetch every render.
+          responses while{" "}
+          <code className="font-mono">cache: &quot;no-store&quot;</code> forces
+          a fresh fetch every render.
         </p>
       </div>
       <div className="grid gap-4 md:grid-cols-2">
@@ -334,7 +337,7 @@ function CacheStrategyComparison({
         <CacheStrategyCard
           title="Dynamic fetch (no-store)"
           badgeLabel="Always fresh"
-          description="By opting into cache: &quot;no-store&quot; we bypass the data cache entirely—every render triggers a brand new fetch."
+          description='By opting into cache: "no-store" we bypass the data cache entirely—every render triggers a brand new fetch.'
           diagnostics={noStoreDiagnostics}
           noStore
         />

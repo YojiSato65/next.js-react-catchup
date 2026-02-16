@@ -73,6 +73,12 @@ Each layer is intentionally observed and documented.
 - Inputs are validated with `CreateTaskSchema`, and field errors are surfaced via `useActionState` without a full client mutation layer.
 - Successful submissions revalidate both `/tasks` and `/api/cache/tasks` so the memoized + data-cache demo stays accurate before redirecting to the new task detail page.
 
+### Update Task Server Action (Issue #19)
+
+- Visit `/tasks/[id]/edit` to load the edit form that hydrates initial values server-side.
+- The form posts to the `updateTask` Server Action, which validates via `UpdateTaskSchema`, updates the record, and revalidates `/tasks`, `/api/cache/tasks`, and the specific task detail route.
+- Optimistic UX: after the mutation succeeds, users are redirected back to the task detail view reflecting the latest data.
+
 ---
 
 ## 3️⃣ React 19 Features
