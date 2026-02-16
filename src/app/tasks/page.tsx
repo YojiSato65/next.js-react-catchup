@@ -236,11 +236,15 @@ function RequestMemoizationBanner({
         <div className="flex items-center justify-between flex-wrap gap-2">
           <div>
             <p className="text-sm font-semibold text-indigo-900 dark:text-indigo-200">
-              Request Memoization
+              Request Memoization + Data Cache
             </p>
             <p className="text-sm text-indigo-800/80 dark:text-indigo-100/70">
-              Issue #15 · Next.js automatically reuses identical fetch results
-              per request.
+              Issues #15 & #16 · Next.js reuses identical fetches per request
+              and serves the cached response until{" "}
+              <code className="font-mono">
+                next.revalidate = {diagnostics.revalidateInSeconds}s
+              </code>{" "}
+              expires.
             </p>
           </div>
           <span
@@ -273,11 +277,19 @@ function RequestMemoizationBanner({
               {diagnostics.cacheKey.length > 24 ? "…" : ""}
             </dd>
           </div>
+          <div>
+            <dt className="text-indigo-700/70 dark:text-indigo-200 text-xs uppercase tracking-wide">
+              Data cache TTL
+            </dt>
+            <dd>{diagnostics.revalidateInSeconds}s</dd>
+          </div>
         </dl>
         <p className="text-xs text-indigo-800/80 dark:text-indigo-200/70">
           We call <code className="font-mono">getMemoizedTaskList()</code> twice
-          during the same render. Because the arguments are identical, the
-          cached result is reused and the repository executes only once.
+          during the same render. React&apos;s request memoization skips the
+          duplicate work, while the underlying fetch stays cached for the
+          configured revalidation window. Refresh after the TTL to observe a new
+          timestamp.
         </p>
       </div>
     </div>
