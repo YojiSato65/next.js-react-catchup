@@ -5,46 +5,46 @@ import { redirect } from "next/navigation";
 import { TaskRepository } from "@/lib/repository/task";
 import { CreateTaskSchema } from "@/lib/schema/task";
 
+export type CreateTaskFormState = {
+  success: boolean;
+  errors?: Record<string, string[]>;
+};
+
 /**
  * Server Action to create a new task
  * Validates input with Zod, creates task in database, revalidates cache, and redirects
  */
-export async function createTask(_prevState: unknown, formData: FormData) {
-  // Convert FormData to object
-  const data = {
-    title: formData.get("title"),
-    description: formData.get("description") || undefined,
-    status: formData.get("status") || "todo",
-    priority: formData.get("priority") || "medium",
-    assignee: formData.get("assignee") || undefined,
-    dueDate: formData.get("dueDate")
-      ? new Date(formData.get("dueDate") as string)
-      : undefined,
-  };
+export async function createTask(
+  _prevState: CreateTaskFormState | null,
+  formData: FormData,
+): Promise<CreateTaskFormState | null> {
+  const parsedInput = CreateTaskSchema.safeParse(
+    mapFormDataToCreateInput(formData),
+  );
 
-  // Parse and validate input
-  const validationResult = CreateTaskSchema.safeParse(data);
-
-  if (!validationResult.success) {
+  if (!parsedInput.success) {
     return {
       success: false,
-      errors: validationResult.error.flatten().fieldErrors,
+      errors: parsedInput.error.flatten().fieldErrors,
     };
   }
 
   try {
-    const task = await TaskRepository.create(validationResult.data);
+    const task = await TaskRepository.create(parsedInput.data);
 
-    // Revalidate the task list page to reflect new task
+    // Revalidate both the tasks page and the cached API endpoint so newly
+    // created tasks show up immediately despite the data cache TTL demo.
     revalidatePath("/tasks");
+    revalidatePath("/api/cache/tasks");
 
-    // Redirect to the newly created task's detail page
     redirect(`/tasks/${task.id}`);
   } catch (error) {
     if (isRedirectError(error)) {
       throw error;
     }
+
     console.error("Failed to create task:", error);
+
     return {
       success: false,
       errors: {
@@ -52,6 +52,32 @@ export async function createTask(_prevState: unknown, formData: FormData) {
       },
     };
   }
+}
+
+function mapFormDataToCreateInput(formData: FormData) {
+  const dueDateInput = getOptionalTrimmedString(formData.get("dueDate"));
+
+  return {
+    title: getRequiredTrimmedString(formData.get("title")),
+    description: getOptionalTrimmedString(formData.get("description")),
+    status: getOptionalTrimmedString(formData.get("status")),
+    priority: getOptionalTrimmedString(formData.get("priority")),
+    assignee: getOptionalTrimmedString(formData.get("assignee")),
+    dueDate: dueDateInput ? new Date(dueDateInput) : undefined,
+  };
+}
+
+function getRequiredTrimmedString(value: FormDataEntryValue | null): string {
+  if (value == null) return "";
+  return value.toString().trim();
+}
+
+function getOptionalTrimmedString(
+  value: FormDataEntryValue | null,
+): string | undefined {
+  if (value == null) return undefined;
+  const trimmed = value.toString().trim();
+  return trimmed.length ? trimmed : undefined;
 }
 
 function isRedirectError(error: unknown): error is { digest: string } {

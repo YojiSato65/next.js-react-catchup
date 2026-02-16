@@ -2,7 +2,7 @@
 
 import { useActionState } from "react";
 import { useRouter } from "next/navigation";
-import { createTask } from "../actions";
+import { createTask, type CreateTaskFormState } from "../actions";
 import { Button } from "@/components/ui";
 
 /**
@@ -10,15 +10,10 @@ import { Button } from "@/components/ui";
  * Client component using useActionState to handle Server Action submission
  */
 
-interface FormState {
-  success: boolean;
-  errors?: Record<string, string[]>;
-}
-
 export function TaskCreateForm() {
   const router = useRouter();
   const [state, formAction, isPending] = useActionState<
-    FormState | null,
+    CreateTaskFormState | null,
     FormData
   >(createTask, null);
 

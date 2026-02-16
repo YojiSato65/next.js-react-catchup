@@ -67,6 +67,12 @@ Each layer is intentionally observed and documented.
 - Mutation flow design
 - Cache invalidation strategies for CRUD
 
+### Create Task Server Action (Issue #18)
+
+- The `/tasks/new` form submits through a Server Action (`createTask`).
+- Inputs are validated with `CreateTaskSchema`, and field errors are surfaced via `useActionState` without a full client mutation layer.
+- Successful submissions revalidate both `/tasks` and `/api/cache/tasks` so the memoized + data-cache demo stays accurate before redirecting to the new task detail page.
+
 ---
 
 ## 3️⃣ React 19 Features
