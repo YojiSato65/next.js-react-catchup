@@ -3,6 +3,7 @@ import { randomUUID } from "crypto";
 import type { Task, TaskPriority, TaskStatus } from "@/lib/schema/task";
 import {
   DATA_CACHE_REVALIDATE_SECONDS,
+  TASK_LIST_CACHE_TAG,
   getAppBaseUrl,
 } from "@/lib/cache/config";
 
@@ -31,6 +32,8 @@ export interface MemoizedTaskQueryResult {
     executedAt: string;
     cacheKey: string;
     revalidateInSeconds: number;
+    strategy: "revalidate" | "tagged" | "no-store";
+    tags?: string[];
   };
 }
 
@@ -96,12 +99,15 @@ function buildDiagnostics(
   payload: TaskCacheResponse,
   cacheKey: string,
   revalidateInSeconds: number,
+  overrides?: Partial<MemoizedTaskQueryResult["diagnostics"]>,
 ) {
   return {
     executionId: randomUUID(),
     executedAt: payload.generatedAt,
     cacheKey,
     revalidateInSeconds,
+    strategy: "revalidate",
+    ...overrides,
   } satisfies MemoizedTaskQueryResult["diagnostics"];
 }
 
@@ -136,6 +142,26 @@ export async function getNoStoreTaskList(
 
   return {
     tasks: payload.tasks,
-    diagnostics: buildDiagnostics(payload, cacheKey, 0),
+    diagnostics: buildDiagnostics(payload, cacheKey, 0, {
+      strategy: "no-store",
+    }),
+  } satisfies MemoizedTaskQueryResult;
+}
+
+export async function getTaggedTaskList(
+  input: MemoizedTaskQueryInput,
+): Promise<MemoizedTaskQueryResult> {
+  const { payload, cacheKey } = await fetchTaskCachePayload(input, {
+    next: {
+      tags: [TASK_LIST_CACHE_TAG],
+    },
+  });
+
+  return {
+    tasks: payload.tasks,
+    diagnostics: buildDiagnostics(payload, cacheKey, Number.POSITIVE_INFINITY, {
+      strategy: "tagged",
+      tags: [TASK_LIST_CACHE_TAG],
+    }),
   } satisfies MemoizedTaskQueryResult;
 }

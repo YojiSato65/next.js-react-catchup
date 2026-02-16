@@ -5,6 +5,7 @@ import { TaskStatus, TaskPriority } from "@/lib/schema/task";
 import {
   getMemoizedTaskList,
   getNoStoreTaskList,
+  getTaggedTaskList,
   type MemoizedTaskQueryInput,
   type MemoizedTaskQueryResult,
   type TaskListSortField,
@@ -66,6 +67,7 @@ async function TaskListContent({ searchParams }: TaskListPageProps) {
 
   const memoizedResult = await getMemoizedTaskList(memoizedInput);
   const memoizedResultAgain = await getMemoizedTaskList(memoizedInput);
+  const taggedResult = await getTaggedTaskList(memoizedInput);
   const noStoreResult = await getNoStoreTaskList(memoizedInput);
 
   const memoizationVerified = Object.is(memoizedResult, memoizedResultAgain);
@@ -164,6 +166,7 @@ async function TaskListContent({ searchParams }: TaskListPageProps) {
       />
       <CacheStrategyComparison
         revalidateDiagnostics={memoizedResult.diagnostics}
+        tagDiagnostics={taggedResult.diagnostics}
         noStoreDiagnostics={noStoreResult.diagnostics}
       />
       {listContent}
@@ -317,11 +320,13 @@ function RequestMemoizationBanner({
 
 interface CacheStrategyComparisonProps {
   revalidateDiagnostics: MemoizedTaskQueryResult["diagnostics"];
+  tagDiagnostics: MemoizedTaskQueryResult["diagnostics"];
   noStoreDiagnostics: MemoizedTaskQueryResult["diagnostics"];
 }
 
 function CacheStrategyComparison({
   revalidateDiagnostics,
+  tagDiagnostics,
   noStoreDiagnostics,
 }: CacheStrategyComparisonProps) {
   return (
@@ -331,26 +336,31 @@ function CacheStrategyComparison({
           Cache Strategy Comparison
         </p>
         <p className="text-sm text-slate-600 dark:text-slate-300">
-          Issue #17 · Observe how{" "}
-          <code className="font-mono">next.revalidate</code> serves cached
-          responses while{" "}
-          <code className="font-mono">cache: &quot;no-store&quot;</code> forces
-          a fresh fetch every render.
+          Issues #17 & #21 · Compare{" "}
+          <code className="font-mono">revalidatePath</code>,{" "}
+          <code className="font-mono">revalidateTag</code>, and{" "}
+          <code className="font-mono">cache: &quot;no-store&quot;</code> to see
+          how each one affects the task list cache.
         </p>
       </div>
-      <div className="grid gap-4 md:grid-cols-2">
+      <div className="grid gap-4 md:grid-cols-3">
         <CacheStrategyCard
-          title="Data Cache (revalidate)"
+          title="Path-based revalidate"
           badgeLabel={`TTL ${revalidateDiagnostics.revalidateInSeconds}s`}
-          description="Next.js stores this response until the TTL expires, so repeated refreshes within the window reuse the same payload."
+          description="Default data cache using next.revalidate. We revalidate the /tasks page and API path after mutations."
           diagnostics={revalidateDiagnostics}
+        />
+        <CacheStrategyCard
+          title="Tag-based cache"
+          badgeLabel="Invalidated via revalidateTag"
+          description="Fetch is tagged with tasks:cache:list so Server Actions can surgically invalidate cached responses."
+          diagnostics={tagDiagnostics}
         />
         <CacheStrategyCard
           title="Dynamic fetch (no-store)"
           badgeLabel="Always fresh"
           description='By opting into cache: "no-store" we bypass the data cache entirely—every render triggers a brand new fetch.'
           diagnostics={noStoreDiagnostics}
-          noStore
         />
       </div>
     </div>
@@ -362,7 +372,6 @@ interface CacheStrategyCardProps {
   description: string;
   badgeLabel: string;
   diagnostics: MemoizedTaskQueryResult["diagnostics"];
-  noStore?: boolean;
 }
 
 function CacheStrategyCard({
@@ -370,8 +379,22 @@ function CacheStrategyCard({
   description,
   badgeLabel,
   diagnostics,
-  noStore = false,
 }: CacheStrategyCardProps) {
+  const lifetimeLabel = (() => {
+    if (
+      diagnostics.strategy === "no-store" ||
+      diagnostics.revalidateInSeconds === 0
+    ) {
+      return 'Disabled (cache: "no-store")';
+    }
+
+    if (diagnostics.strategy === "tagged") {
+      return "Controlled via revalidateTag";
+    }
+
+    return `${diagnostics.revalidateInSeconds}s via next.revalidate`;
+  })();
+
   return (
     <div className="rounded-lg border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/60 p-4">
       <div className="flex items-start justify-between gap-3 mb-3">
@@ -396,21 +419,19 @@ function CacheStrategyCard({
         </div>
         <div>
           <dt className="text-xs uppercase tracking-wide text-slate-500 dark:text-slate-400">
-            Cache key
+            Cache key / tags
           </dt>
           <dd className="font-mono text-xs break-all">
-            {diagnostics.cacheKey}
+            {diagnostics.tags?.length
+              ? diagnostics.tags.join(", ")
+              : diagnostics.cacheKey}
           </dd>
         </div>
         <div>
           <dt className="text-xs uppercase tracking-wide text-slate-500 dark:text-slate-400">
             Cache lifetime
           </dt>
-          <dd>
-            {noStore || diagnostics.revalidateInSeconds === 0
-              ? "Disabled (cache: &quot;no-store&quot;)"
-              : `${diagnostics.revalidateInSeconds}s via next.revalidate`}
-          </dd>
+          <dd>{lifetimeLabel}</dd>
         </div>
       </dl>
     </div>

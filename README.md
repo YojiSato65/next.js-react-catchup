@@ -85,6 +85,12 @@ Each layer is intentionally observed and documented.
 - The action extracts the `taskId`, deletes through `TaskRepository`, and revalidates `/tasks`, `/api/cache/tasks`, and the deleted task’s detail path before redirecting back to `/tasks`.
 - Because it revalidates the cached API endpoint, the data-cache demo immediately reflects the removal even if the TTL hasn’t expired.
 
+### `revalidatePath` vs `revalidateTag` (Issue #21)
+
+- The `/tasks` page now fetches three variants: path-based `next.revalidate`, tag-based fetch tagged with `tasks:cache:list`, and a `cache: "no-store"` request for a control.
+- Server Actions call both `revalidatePath` (for `/tasks`, `/tasks/[id]`, and `/api/cache/tasks`) and `revalidateTag("tasks:cache:list")` so you can observe which cache refreshes when.
+- The “Cache Strategy Comparison” panel highlights timestamps for each strategy—refresh within the TTL to see the revalidatePath card stay stable while hitting “Save” or “Delete” busts both the path and tag caches immediately.
+
 ---
 
 ## 3️⃣ React 19 Features

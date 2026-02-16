@@ -23,3 +23,4 @@ export function getAppBaseUrl(): string {
 }
 
 export const DATA_CACHE_REVALIDATE_SECONDS = 15;
+export const TASK_LIST_CACHE_TAG = "tasks:cache:list";

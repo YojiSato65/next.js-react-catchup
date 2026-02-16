@@ -1,9 +1,10 @@
 "use server";
 
-import { revalidatePath } from "next/cache";
+import { revalidatePath, revalidateTag } from "next/cache";
 import { redirect } from "next/navigation";
 import { TaskRepository } from "@/lib/repository/task";
 import { CreateTaskSchema, UpdateTaskSchema } from "@/lib/schema/task";
+import { TASK_LIST_CACHE_TAG } from "@/lib/cache/config";
 
 export type TaskMutationFormState = {
   success: boolean;
@@ -34,6 +35,7 @@ export async function createTask(
     // created tasks show up immediately despite the data cache TTL demo.
     revalidatePath("/tasks");
     revalidatePath("/api/cache/tasks");
+    revalidateTag(TASK_LIST_CACHE_TAG, "max");
 
     redirect(`/tasks/${task.id}`);
   } catch (error) {
@@ -92,6 +94,7 @@ export async function updateTask(
     revalidatePath("/tasks");
     revalidatePath("/api/cache/tasks");
     revalidatePath(`/tasks/${id}`);
+    revalidateTag(TASK_LIST_CACHE_TAG, "max");
 
     redirect(`/tasks/${id}`);
   } catch (error) {
@@ -128,6 +131,7 @@ export async function deleteTask(formData: FormData): Promise<void> {
     revalidatePath("/tasks");
     revalidatePath("/api/cache/tasks");
     revalidatePath(`/tasks/${taskId}`);
+    revalidateTag(TASK_LIST_CACHE_TAG, "max");
 
     redirect("/tasks");
   } catch (error) {
