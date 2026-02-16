@@ -110,6 +110,32 @@ export async function updateTask(
   }
 }
 
+/**
+ * Server Action to delete an existing task.
+ * Removes the record, revalidates related caches, and redirects back to /tasks.
+ */
+export async function deleteTask(formData: FormData): Promise<void> {
+  const taskId = getTaskIdFromFormData(formData);
+
+  if (taskId == null) {
+    console.error("Failed to delete task: missing taskId");
+    redirect("/tasks");
+  }
+
+  try {
+    await TaskRepository.delete(taskId);
+
+    revalidatePath("/tasks");
+    revalidatePath("/api/cache/tasks");
+    revalidatePath(`/tasks/${taskId}`);
+
+    redirect("/tasks");
+  } catch (error) {
+    console.error("Failed to delete task:", error);
+    redirect("/tasks");
+  }
+}
+
 function getTaskFormFields(formData: FormData) {
   return {
     title: getRequiredTrimmedString(formData.get("title")),
@@ -117,7 +143,9 @@ function getTaskFormFields(formData: FormData) {
     status: getOptionalTrimmedString(formData.get("status")),
     priority: getOptionalTrimmedString(formData.get("priority")),
     assignee: getOptionalTrimmedString(formData.get("assignee")),
-    dueDate: toDateOrUndefined(getOptionalTrimmedString(formData.get("dueDate"))),
+    dueDate: toDateOrUndefined(
+      getOptionalTrimmedString(formData.get("dueDate")),
+    ),
   };
 }
 

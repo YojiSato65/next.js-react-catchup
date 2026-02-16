@@ -2,6 +2,7 @@ import { notFound } from "next/navigation";
 import { TaskRepository } from "@/lib/repository/task";
 import { Button } from "@/components/ui";
 import Link from "next/link";
+import { deleteTask } from "../actions";
 
 interface TaskDetailPageProps {
   params: Promise<{
@@ -136,15 +137,29 @@ export default async function TaskDetailPage({ params }: TaskDetailPageProps) {
         </div>
 
         {/* Action Buttons */}
-        <div className="flex gap-3">
-          <Link href="/tasks" className="flex-1">
+        <div className="flex gap-3 flex-wrap">
+          <Link href="/tasks" className="flex-1 min-w-35">
             <Button className="w-full">← Back to Tasks</Button>
           </Link>
-          <Link href={`/tasks/${task.id}/edit`} className="flex-1">
+          <Link href={`/tasks/${task.id}/edit`} className="flex-1 min-w-35">
             <Button className="w-full" variant="primary">
               Edit Task
             </Button>
           </Link>
+          <form
+            action={deleteTask}
+            className="flex-1 min-w-35"
+            aria-label="Delete task"
+          >
+            <input type="hidden" name="taskId" value={task.id} />
+            <Button
+              type="submit"
+              variant="outline"
+              className="w-full border-red-200 text-red-600 hover:bg-red-50"
+            >
+              Delete Task
+            </Button>
+          </form>
         </div>
       </div>
     </div>

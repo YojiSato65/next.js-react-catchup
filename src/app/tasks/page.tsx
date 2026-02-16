@@ -10,6 +10,7 @@ import {
   type TaskListSortField,
   type TaskListSortOrder,
 } from "@/lib/fetchers/memoizedTasks";
+import { deleteTask } from "./actions";
 
 /**
  * Task List Page
@@ -74,7 +75,9 @@ async function TaskListContent({ searchParams }: TaskListPageProps) {
     tasks.length === 0 ? (
       <div className="text-center py-12">
         <p className="text-gray-500 mb-4">No tasks found</p>
-        <Button variant="primary">Create First Task</Button>
+        <Link href="/tasks/new">
+          <Button variant="primary">Create First Task</Button>
+        </Link>
       </div>
     ) : (
       <div className="space-y-4">
@@ -118,15 +121,23 @@ async function TaskListContent({ searchParams }: TaskListPageProps) {
                   </span>
                 </div>
               </div>
-              <div className="flex gap-2">
+              <div className="flex gap-2 items-center">
                 <Link href={`/tasks/${task.id}/edit`}>
                   <Button variant="outline" size="sm">
                     Edit
                   </Button>
                 </Link>
-                <Button variant="outline" size="sm">
-                  Delete
-                </Button>
+                <form action={deleteTask} className="inline-flex">
+                  <input type="hidden" name="taskId" value={task.id} />
+                  <Button
+                    type="submit"
+                    variant="outline"
+                    size="sm"
+                    className="border-red-200 text-red-600 hover:bg-red-50 dark:hover:bg-red-900/10"
+                  >
+                    Delete
+                  </Button>
+                </form>
               </div>
             </div>
             {task.assignee && (

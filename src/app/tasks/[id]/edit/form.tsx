@@ -172,7 +172,11 @@ export function TaskEditForm({ task }: TaskEditFormProps) {
       </div>
 
       <div className="flex gap-3 pt-4">
-        <Button type="submit" disabled={isPending} className="btn-primary flex-1">
+        <Button
+          type="submit"
+          disabled={isPending}
+          className="btn-primary flex-1"
+        >
           {isPending ? "Saving..." : "Save Changes"}
         </Button>
         <button

@@ -79,6 +79,12 @@ Each layer is intentionally observed and documented.
 - The form posts to the `updateTask` Server Action, which validates via `UpdateTaskSchema`, updates the record, and revalidates `/tasks`, `/api/cache/tasks`, and the specific task detail route.
 - Optimistic UX: after the mutation succeeds, users are redirected back to the task detail view reflecting the latest data.
 
+### Delete Task Server Action (Issue #20)
+
+- Delete buttons on both the task list and task detail page submit tiny forms pointing to the `deleteTask` Server Action.
+- The action extracts the `taskId`, deletes through `TaskRepository`, and revalidates `/tasks`, `/api/cache/tasks`, and the deleted task’s detail path before redirecting back to `/tasks`.
+- Because it revalidates the cached API endpoint, the data-cache demo immediately reflects the removal even if the TTL hasn’t expired.
+
 ---
 
 ## 3️⃣ React 19 Features

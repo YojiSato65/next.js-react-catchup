@@ -28,12 +28,16 @@ export default async function TaskEditPage({ params }: TaskEditPageProps) {
     <div className="min-h-screen bg-base-200 py-8 px-4">
       <div className="max-w-2xl mx-auto">
         <div className="mb-8">
-          <Link href={`/tasks/${task.id}`} className="link link-primary mb-4 inline-block">
+          <Link
+            href={`/tasks/${task.id}`}
+            className="link link-primary mb-4 inline-block"
+          >
             ← Back to Task
           </Link>
           <h1 className="text-4xl font-bold mb-2">Edit Task</h1>
           <p className="text-base-content/70">
-            Update the task details below. Changes save via Server Actions and immediately revalidate cached lists.
+            Update the task details below. Changes save via Server Actions and
+            immediately revalidate cached lists.
           </p>
         </div>
 
@@ -47,7 +51,9 @@ export default async function TaskEditPage({ params }: TaskEditPageProps) {
   );
 }
 
-export async function generateMetadata({ params }: TaskEditPageProps): Promise<Metadata> {
+export async function generateMetadata({
+  params,
+}: TaskEditPageProps): Promise<Metadata> {
   const { id } = await params;
   const taskId = Number(id);
 
