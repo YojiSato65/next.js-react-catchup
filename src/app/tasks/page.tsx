@@ -2,6 +2,7 @@ import { Suspense } from "react";
 import Link from "next/link";
 import { Button } from "@/components/ui";
 import { TaskStatus, TaskPriority } from "@/lib/schema/task";
+import { TaskFilters } from "./TaskFilters";
 import {
   getMemoizedTaskList,
   getNoStoreTaskList,
@@ -205,33 +206,7 @@ export default async function TasksPage({ searchParams }: TaskListPageProps) {
         </Link>
       </div>
 
-      {/* Filters */}
-      <div className="bg-white dark:bg-slate-800 rounded-lg shadow p-4 mb-6 border border-gray-200 dark:border-slate-700">
-        <div className="flex gap-4 flex-wrap">
-          <div>
-            <label className="text-sm font-medium text-gray-700 dark:text-gray-300 mr-2">
-              Status
-            </label>
-            <select className="mt-1 px-3 py-2 border border-gray-300 dark:border-slate-600 rounded bg-white dark:bg-slate-700 text-gray-900 dark:text-white">
-              <option value="">All</option>
-              <option value="todo">Todo</option>
-              <option value="in_progress">In Progress</option>
-              <option value="done">Done</option>
-            </select>
-          </div>
-          <div>
-            <label className="text-sm font-medium text-gray-700 dark:text-gray-300 mr-2">
-              Priority
-            </label>
-            <select className="mt-1 px-3 py-2 border border-gray-300 dark:border-slate-600 rounded bg-white dark:bg-slate-700 text-gray-900 dark:text-white">
-              <option value="">All</option>
-              <option value="low">Low</option>
-              <option value="medium">Medium</option>
-              <option value="high">High</option>
-            </select>
-          </div>
-        </div>
-      </div>
+      <TaskFilters />
 
       {/* Task List with Suspense */}
       <Suspense fallback={<TaskListSkeleton />}>
